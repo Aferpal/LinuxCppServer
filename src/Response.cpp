@@ -68,11 +68,11 @@ void Response::send(const String& msg){
 	this->body=msg;
 }
 
-void Response::sendFile(const String& filePath, const String& contentT){
+void Response::sendFile(const String& filePath,  const char* contentT){
 	String path="../";
 	path+=filePath;
 	std::ifstream requestedFile{path};
-	delete[]path;
+	if(path){delete[]path;}
 	if(!requestedFile){
 		this->statusCode=404;
 		return;
@@ -84,6 +84,9 @@ void Response::sendFile(const String& filePath, const String& contentT){
 	this->body=readData;
 	this->contentLength=this->body.length();
 	this->contentType=contentT;
+	if(readData){
+		delete[]readData;
+	}
 }
 
 String Response::getMessage(){

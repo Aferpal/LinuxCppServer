@@ -15,7 +15,7 @@ class Response{
 		Response(Response&&);
 		void generateMessage();
 		void send(const String&);
-		void sendFile(const String&, const String&);
+		void sendFile(const String&, const char*);
 		void setStatus(int c){this->statusCode=c;}
 		String getMessage();
 		~Response();

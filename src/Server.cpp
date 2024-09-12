@@ -1,5 +1,4 @@
 #include "Server.h"
-
 using namespace http;
 
 Server::Server(){
@@ -8,7 +7,6 @@ Server::Server(){
 		throw "Socket error\n";
 	}
 }
-
 void Server::listenAt(int _port){
 	this->port=_port;
 	this->hexPort=toHex(_port);
@@ -33,13 +31,7 @@ Request* Server::formatRequest(int req){
 }
 
 void Server::get(String root, const std::function<void(Request* req, Response* res)>& f){
-	/*if(rootBehaviour.find(root)==rootBehaviour.end()){
-		rootBehaviour.insert(std::pair{root, f});
-	}else{
-		rootBehaviour[root]=f;
-	}*/
 	rootBehaviour[root]=f;
-	
 }
 void Server::handleRequest(int req){
 	Request* request=formatRequest(req);

@@ -194,7 +194,6 @@ void String::normalise(){
     this->_size=this->_length;
 }
 String::~String(){
-    
     if(this->data){
         std::cout<<"Delete String "<<*this<<"\n";
         delete[]this->data;
