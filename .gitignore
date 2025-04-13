@@ -2,4 +2,5 @@ output
 *.html
 *.css
 .vscode
-src/main.cpp
+/main.cpp
+static

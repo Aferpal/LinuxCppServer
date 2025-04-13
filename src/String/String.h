@@ -38,6 +38,6 @@ class String{
         String& operator+=(const char*);
         String& operator+=(const String&);
         void normalise();
-        operator const char*(){return this->data;}
+        operator const char*()const{return this->data;}
         ~String();
 };

@@ -16,9 +16,11 @@ void Server::listenAt(int _port){
 	}
 	if(listen(this->socket_fd, 20)<0){throw "Listen error\n";}
 	std::cout<<"Succesfully listening at port "<<_port<<'\n';
-	for(int i=0; i<4; i++){
+	for(int i=0; i<20; i++){
+		std::cout<<"Request "<<i<<" atendiendo...\n";
 		this->current_request=accept(this->socket_fd, NULL, NULL);
 		handleRequest(this->current_request);
+		close(this->current_request);
 	}
 		
 	
@@ -34,6 +36,7 @@ void Server::get(String root, const std::function<void(Request* req, Response* r
 	rootBehaviour[root]=f;
 }
 void Server::handleRequest(int req){
+	std::cout<<"Handling request "<<req<<'\n';
 	Request* request=formatRequest(req);
 	Response* response=new Response();
 	if(rootBehaviour.find(request->getRoot())!=rootBehaviour.end()){
@@ -43,6 +46,18 @@ void Server::handleRequest(int req){
 	int bSent=send(req, msg, msg.length(), 0);
 	delete request;
 	delete response;
+}
+
+void Server::addStaticFolder(const String& folder){
+    for (const auto & entry : std::filesystem::directory_iterator((const char*)folder)){
+		if(entry.is_regular_file()){
+			String file = entry.path().relative_path().c_str();
+			this->get(String("/")+file, [file, entry](Request* req, Response* res){
+        		res->sendFile(file, String("text/")+String(entry.path().extension().c_str()+1));
+    		});
+		}
+        std::cout << entry.path() << std::endl;
+	}
 }
 
 Server::~Server(){

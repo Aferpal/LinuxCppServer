@@ -10,43 +10,43 @@ String::String(const char* str){
     this->data=new char[this->_length+1]{0};
     this->_size=this->_length;
     strcpy(this->data, str);
-    std::cout<<"cConstructor for "<<str<<"\n";
 }
+
 String::String(const String& str){
     this->data=new char[str._length+1]{0};
     strcpy(this->data, str.data);
     this->_length=str._length;
     this->_size=str._length;
-    std::cout<<"Deep Constructor for "<<str<<"\n";
 }
+
 String::String(String&& str):data{str.data}, _length{str._length}, _size{str._size}{
     str.data=nullptr;
-    std::cout<<"Move Constructor for "<<*this<<"\n";
 }
+
 void String::operator=(const char* str){
     if(this->data){delete[]this->data;}
     this->_length=lengthOf(str);
     this->_size=this->_length;
     this->data=new char[this->_length+1]{0};
     strcpy(this->data, str);
-    std::cout<<"Asingment char operator for "<<str<<"\n";
 }
+
 void String::operator=(const String& str){
     if(this->data){delete[] this->data;}
     this->_length=str._length;
     this->_size=str._size;
     this->data= new char[this->_length+1]{0};
     strcpy(this->data, str.data);
-    std::cout<<"Asignment deep for "<<str<<"\n";
 }
+
 void String::operator=(String&& str){
     if(this->data){delete[]this->data;}
     this->data=str.data;
     str.data=nullptr;
     this->_length=str._length;
     this->_size=str._size;
-    std::cout<<"move operator for "<<*this<<"\n";
 }
+
 char String::operator[](int i)const{
     if(i>=_length || i<(_length*-1)){
         IndexOutOfBoundsEXception ex;
@@ -194,8 +194,7 @@ void String::normalise(){
     this->_size=this->_length;
 }
 String::~String(){
-    if(this->data){
-        std::cout<<"Delete String "<<*this<<"\n";
+    if(this->data != nullptr){
         delete[]this->data;
     }  
 }

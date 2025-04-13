@@ -1,6 +1,6 @@
 #include "Request.h"
 
-Request::Request(String req){
+Request::Request(const String& req){
 	String method=(req.substr(0, req.findIndexOf('/')));
 	method.normalise();
 	this->method=getMethodFromString(method);
@@ -40,6 +40,6 @@ Method Request::getMethodFromString(const String& str){
 	return BAD_METHOD;
 }
 Method Request::getMethod()const{return this->method;}
-String Request::getRoot()const{return this->root;}
+const String& Request::getRoot()const{return this->root;}
 Request::~Request(){
 }

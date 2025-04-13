@@ -1,5 +1,5 @@
 #include "Response.h"
-
+#include<unistd.h>
 Response::Response(){
 	this->statusCode=200;
 	this->contentLength=0;
@@ -32,7 +32,9 @@ Response::Response(Response&& otherResponse){
 	this->contentType=otherResponse.contentType;
 }
 void Response::generateMessage(){
-	this->message="HTTP/1.1 ";
+
+	this->message = "HTTP/1.1 ";
+
 	char number[4]={(char)(((this->statusCode/100)%10)+'0'), (char)(((this->statusCode/10)%10)+'0'), (char)((this->statusCode%10)+'0'), '\0'};
 	this->message=this->message+number;
 	if(number[0]=='4'){
@@ -54,10 +56,15 @@ void Response::generateMessage(){
 		l/=10;
 	}
 	strreverse(size);
+
 	this->message+=size;
-	this->message+="\nConnection: keep-alive\n\n";
+
+	this->message+="\nConnection: Closed\n\n";
+
 	if(this->body.length()!=0){
-		this->message+=this->body;;
+
+		this->message+=this->body;
+
 	}
 	this->message+="\r\n\r\n";
 }
@@ -68,17 +75,20 @@ void Response::send(const String& msg){
 	this->body=msg;
 }
 
-void Response::sendFile(const String& filePath,  const char* contentT){
-	String path="../";
+void Response::sendFile(const String& filePath,  const String& contentT){
+
+	String path=getenv("PWD");
+	path+="/";
 	path+=filePath;
+
 	std::ifstream requestedFile{path};
-	if(path){delete[]path;}
+
 	if(!requestedFile){
 		this->statusCode=404;
 		return;
 	}
 	this->statusCode=200;
-	char* readData= new char[1024];
+	char* readData= new char[2048]{0};
 	int i=0;
 	while(i<1024 && requestedFile.get(*(readData+(i++)))){}
 	this->body=readData;
@@ -87,6 +97,7 @@ void Response::sendFile(const String& filePath,  const char* contentT){
 	if(readData){
 		delete[]readData;
 	}
+	requestedFile.close();
 }
 
 String Response::getMessage(){
@@ -94,6 +105,7 @@ String Response::getMessage(){
 	return this->message;
 }
 
+
 Response::~Response(){
-	
+	std::cout<<"Destruyendo respuesta\n";
 }
