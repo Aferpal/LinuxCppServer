@@ -8,6 +8,15 @@ Response::Response(){
 	this->contentType=String();
 }
 
+Response::Response(int socket){
+	this->statusCode=200;
+	this->contentLength=0;
+	this->body=String();
+	this->message=String();
+	this->contentType=String();
+	this->socketToClient = socket;
+}
+
 Response::Response(int _statusCode, const String& body, const String& contentType){
 	this->statusCode=_statusCode;
 	this->contentLength=body.length();
@@ -22,6 +31,7 @@ Response::Response(const Response& otherResponse){
 	this->body=otherResponse.body;
 	this->contentType=otherResponse.contentType;
 	this->message=otherResponse.message;
+	this->socketToClient = otherResponse.socketToClient;
 }
 
 Response::Response(Response&& otherResponse){
@@ -30,6 +40,7 @@ Response::Response(Response&& otherResponse){
 	this->body=otherResponse.body;
 	this->message=otherResponse.message;
 	this->contentType=otherResponse.contentType;
+	this->socketToClient = otherResponse.socketToClient;
 }
 void Response::generateMessage(){
 
@@ -38,16 +49,16 @@ void Response::generateMessage(){
 	char number[4]={(char)(((this->statusCode/100)%10)+'0'), (char)(((this->statusCode/10)%10)+'0'), (char)((this->statusCode%10)+'0'), '\0'};
 	this->message=this->message+number;
 	if(number[0]=='4'){
-		this->message+=" Not found\nContent-Type: text/html\nContent-Length: 78\nConnection: Closed\n\n<html>\n<body>\n<h1 style=\"color: red\">Error, page not found</h1>\n</body>\n<html>\r\n\r\n";
+		this->message+=" Not found\r\nContent-Type: text/html\r\nContent-Length: 78\r\nConnection: Closed\r\n\r\n<html>\n<body>\n<h1 style=\"color: red\">Error, page not found</h1>\n</body>\n<html>\r\n\r\n";
 		return;
 	}else if(number[0]=='2'){
-		this->message+=" OK\n";
+		this->message+=" OK\r\n";
 		if(contentType!=nullptr){
 			this->message+="Content-Type: ";
 			this->message+=this->contentType;
 		}
 	}
-	this->message+="\nContent-Length: ";
+	this->message+="\r\nContent-Length: ";
 	int l=this->contentLength;
 	char size[32]={0};
 	int i=0;
@@ -59,21 +70,22 @@ void Response::generateMessage(){
 
 	this->message+=size;
 
-	this->message+="\nConnection: Closed\n\n";
-
+	this->message+="\r\nConnection: Closed\r\n";
+	this->message+="\r\n";
 	if(this->body.length()!=0){
 
 		this->message+=this->body;
 
 	}
 	this->message+="\r\n\r\n";
+
 }
 
-void Response::send(const String& msg){
+/*void Response::send(const String& msg){
 	this->contentLength=msg.length();
 	this->contentType="plain/text";
 	this->body=msg;
-}
+}*/
 
 void Response::sendFile(const String& filePath,  const String& contentT){
 
@@ -98,6 +110,9 @@ void Response::sendFile(const String& filePath,  const String& contentT){
 		delete[]readData;
 	}
 	requestedFile.close();
+	
+	generateMessage();
+	send(this->socketToClient, this->message, this->message.length() , 0);
 }
 
 String Response::getMessage(){
@@ -107,5 +122,4 @@ String Response::getMessage(){
 
 
 Response::~Response(){
-	std::cout<<"Destruyendo respuesta\n";
 }
