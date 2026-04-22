@@ -12,6 +12,9 @@
 
 
 namespace http{
+
+	typedef std::function<void(const Request&, Response&)> req_handler_t;
+
 	class Server{
 		private:
 			int socket_fd;
@@ -20,18 +23,17 @@ namespace http{
 			int hexPort;
 			struct sockaddr_in sockaddr;
 
-			std::map<String, std::function<void(Request*, Response*)>> getBehaviour;
-			std::map<String, std::function<void(Request*, Response*)>> postBehaviour;
-			std::map<String, std::function<void(Request*, Response*)>> putBehaviour;
+			std::map<String, req_handler_t> getBehaviour;
+			std::map<String, req_handler_t> postBehaviour;
+			std::map<String, req_handler_t> putBehaviour;
+
+			void handleRequest(const Request&);
 
 		public:
 			Server();
 			void listenAt(int);
-			Request* formatRequest(int);
-			Response* formatResponse(char*);
-			void handleRequest(Request*);
-			void get(String str, const std::function<void(Request* req, Response* res)>& f);
-			void post(String str, const std::function<void(Request* req, Response* res)>& f);
+			void get(const String& str, const req_handler_t& f);
+			void post(const String& str, const req_handler_t& f);
 			void addStaticFolder(const String& folder);
 			~Server();
 	};

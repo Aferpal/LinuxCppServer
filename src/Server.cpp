@@ -1,4 +1,7 @@
 #include "Server.h"
+
+#define BUF_BASE_LEN 1024
+
 using namespace http;
 
 Server::Server(){
@@ -8,85 +11,132 @@ Server::Server(){
 	}
 }
 void Server::listenAt(int _port){
-	this->port = _port;
-	this->hexPort = toHex(_port);
 
+	this->port = _port;
+
+	this->hexPort = toHex(_port);
 
 	this->sockaddr={AF_INET, (unsigned short)this->hexPort, 0};
 
-	if(bind(this->socket_fd, (const struct sockaddr*)&sockaddr, sizeof(sockaddr))<0){
+	if( bind(this->socket_fd, (const struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0 ){
+
 		throw "Bind error\n";
+
 	}
 
-	if(listen(this->socket_fd, 20)<0){throw "Listen error\n";}
+	if( listen(this->socket_fd, 20) < 0 ){
+
+		throw "Listen error\n";
+
+	}
+
 	std::cout<<"Succesfully listening at port "<<_port<<'\n';
-	int i = 0;
-	for(int i = 0; i< 20; i++){
-		//std::cout<<"\n\n\nRequest "<<i<<" atendiendo...\n\n\n";
 
+	struct sockaddr_in clientAddr;
 
-		struct sockaddr_in clientAddr;
+	socklen_t clientAddrLen;
+
+	char* buffer;
+
+	int buf_len, stored;
+
+	while(true){
 		
-		socklen_t clientAddrLen;
-		
-		this->current_request=accept(this->socket_fd, (struct sockaddr*)&clientAddr, &clientAddrLen);
+		this->current_request = accept(this->socket_fd, (struct sockaddr*)&clientAddr, &clientAddrLen);
 		
 		//printf("Port: %d, ip: %d.%d.%d.%d\n", clientAddr.sin_port, getip3(clientAddr.sin_addr.s_addr), \
 			getip2(clientAddr.sin_addr.s_addr), getip1(clientAddr.sin_addr.s_addr), getip0(clientAddr.sin_addr.s_addr));
 		
-		char buffer[512]={0};
-		recv(current_request, buffer, 512, 0);
-		//printf("Buffer: %s\n", buffer);
+		buffer = (char*)malloc(sizeof(char)*BUF_BASE_LEN);
+
+		buf_len = BUF_BASE_LEN;
+
+		while( ( stored = recv( this->current_request, ( buffer + buf_len - BUF_BASE_LEN ), BUF_BASE_LEN, 0 )) == BUF_BASE_LEN ){
+			buf_len += BUF_BASE_LEN;
+			buffer = (char*)realloc(buffer, buf_len);
+		}
+
+		buffer[buf_len-(BUF_BASE_LEN-stored) + 1] = 0;
 		
 		Request req{buffer};
+
 		req.setClient(clientAddr);
 
-		handleRequest(&req);
+		handleRequest(req);
 
+		free(buffer);
 
 		close(this->current_request);
+		
 	}
 		
 	
 }
 
-Request* Server::formatRequest(int req){
-	char buffer[512]={0};
-	recv(req, buffer, 512,0);
-	return new Request(buffer);
-}
-
-void Server::get(String root, const std::function<void(Request* req, Response* res)>& f){
+void Server::get(const String& root, const req_handler_t& f){
 	getBehaviour[root]=f;
 }
 
-void Server::post(String root, const std::function<void(Request* req, Response* res)>& f){
+void Server::post(const String& root, const req_handler_t& f){
 	postBehaviour[root]=f;
 }
 
-void Server::handleRequest(Request* request){
+void Server::handleRequest(const Request& request){
+
 	Response response{this->current_request};
-	switch (request->getMethod())
+
+	switch (request.getMethod())
 	{
 	case GET:
 
-		if( getBehaviour.find( request->getRoot() ) != getBehaviour.end()){
-			getBehaviour.at(request->getRoot())(request, &response);
+		if( getBehaviour.find( request.getRoot() ) != getBehaviour.end()){
+			getBehaviour.at(request.getRoot())(request, response);
 		}else{
 			response.setStatus(404);
 		}
 
 		break;
+
 	case POST:
-		if(postBehaviour.find(request->getRoot())!=postBehaviour.end()){
-			postBehaviour.at(request->getRoot())(request, &response);
-		}else{response.setStatus(404);}
-			break;
+
+		if(postBehaviour.find(request.getRoot())!=postBehaviour.end()){
+			postBehaviour.at(request.getRoot())(request, response);
+		}else{
+			response.setStatus(404);
+		}
+
+		break;
+
 	case PUT:
+
 		break;
+
 	default:
-		printf("Nada tio nada \n");
+
+		std::cout << "UNKNOWN METHOD\n";
+		response.setStatus(404);
 		break;
+
+	}
+
+	const String responseMsg = response.getMessage();
+	send(this->current_request, (const char*)responseMsg, responseMsg.length() , 0);
+
+
+}
+
+String content_type_from_extension(const String& ext){
+
+	if ( ext == ".js"){
+		return "text/javascript";
+	}else if( ext == ".json" ){
+		return "application/json";
+	}else if( ext == ".jpg" || ext == ".jpeg"){
+		return "image/jpeg";
+	}else if( ext == ".css"){
+		return "text/css";
+	}else{
+		return "text/plain";
 	}
 
 }
@@ -95,11 +145,12 @@ void Server::addStaticFolder(const String& folder){
     for (const auto & entry : std::filesystem::directory_iterator((const char*)folder)){
 		if(entry.is_regular_file()){
 			String file = entry.path().relative_path().c_str();
-			this->get(String("/")+file, [file, entry](Request* req, Response* res){
-        		res->sendFile(file, String("text/")+String(entry.path().extension().c_str()+1));
+			String extension = (entry.path().extension().c_str());
+			String content_type = content_type_from_extension(extension);
+			this->get(String("/")+file, [file, content_type](const Request& req, Response& res){
+        		res.sendFile(file, content_type);
     		});
 		}
-        std::cout << entry.path() << std::endl;
 	}
 }
 

@@ -13,7 +13,6 @@ class Request{
 		struct sockaddr_in client;
 
 	public:
-		Request(const String& req);
 		Request(char* req);
 		Request(const Request& req);
 		Request(Request&& req);
@@ -22,6 +21,7 @@ class Request{
 		const String& getRoot() const;
 		Method getMethod() const;
 		Method getMethodFromString(const String&);
+		const String& getBody() const;
 		void setClient(const struct sockaddr_in addr_in);
 		~Request();
 

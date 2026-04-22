@@ -1,18 +1,5 @@
 #include "Request.h"
 
-/*Request::Request(const String& req){
-	String method=(req.substr(0, req.findIndexOf('/')));
-
-	method.normalise();
-
-	this->method=getMethodFromString(method);
-
-	int endRoot=req.substr(req.findIndexOf('/'), req.length()-1).findIndexOf(' ')+req.findIndexOf('/');
-	if(endRoot==-1){endRoot=req.length()-1;}
-	this->root=String(req.substr(req.findIndexOf('/'), endRoot));
-}*/
-
-
 Request::Request(char* req){
 	char* cpy = req;
 	if( req != nullptr ){
@@ -90,6 +77,7 @@ Method Request::getMethodFromString(const String& str){
 }
 Method Request::getMethod()const{return this->method;}
 const String& Request::getRoot()const{return this->root;}
+const String& Request::getBody()const{return this->body;}
 Request::~Request(){
 }
 

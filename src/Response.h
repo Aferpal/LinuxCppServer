@@ -1,12 +1,10 @@
 #pragma once
 #include<fstream>
-#include<sys/socket.h>
 #include"String/String.h"
 class Response{
 	private:
 		int statusCode;
 		int contentLength;
-		int socketToClient;
 		String contentType;
 		String message;
 		String body;

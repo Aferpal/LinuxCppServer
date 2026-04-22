@@ -8,13 +8,12 @@ Response::Response(){
 	this->contentType=String();
 }
 
-Response::Response(int socket){
-	this->statusCode=200;
+Response::Response(int code){
+	this->statusCode=code;
 	this->contentLength=0;
 	this->body=String();
 	this->message=String();
 	this->contentType=String();
-	this->socketToClient = socket;
 }
 
 Response::Response(int _statusCode, const String& body, const String& contentType){
@@ -31,7 +30,6 @@ Response::Response(const Response& otherResponse){
 	this->body=otherResponse.body;
 	this->contentType=otherResponse.contentType;
 	this->message=otherResponse.message;
-	this->socketToClient = otherResponse.socketToClient;
 }
 
 Response::Response(Response&& otherResponse){
@@ -40,15 +38,16 @@ Response::Response(Response&& otherResponse){
 	this->body=otherResponse.body;
 	this->message=otherResponse.message;
 	this->contentType=otherResponse.contentType;
-	this->socketToClient = otherResponse.socketToClient;
 }
 void Response::generateMessage(){
 
 	this->message = "HTTP/1.1 ";
 
-	char number[4]={(char)(((this->statusCode/100)%10)+'0'), (char)(((this->statusCode/10)%10)+'0'), (char)((this->statusCode%10)+'0'), '\0'};
+	char number[4] = {0};
+	sprintf(number, "%d", this->statusCode);
 	this->message=this->message+number;
-	if(number[0]=='4'){
+
+	if(number[0] == '4'){
 		this->message+=" Not found\r\nContent-Type: text/html\r\nContent-Length: 78\r\nConnection: Closed\r\n\r\n<html>\n<body>\n<h1 style=\"color: red\">Error, page not found</h1>\n</body>\n<html>\r\n\r\n";
 		return;
 	}else if(number[0]=='2'){
@@ -58,17 +57,11 @@ void Response::generateMessage(){
 			this->message+=this->contentType;
 		}
 	}
-	this->message+="\r\nContent-Length: ";
-	int l=this->contentLength;
-	char size[32]={0};
-	int i=0;
-	while(l>0){
-		size[i++]=char(l%10+'0');
-		l/=10;
-	}
-	strreverse(size);
 
-	this->message+=size;
+	char cont_length[64]={0};
+	snprintf(cont_length, 64, "\r\nContent-Length: %d", this->contentLength);
+
+	this->message+=cont_length;
 
 	this->message+="\r\nConnection: Closed\r\n";
 	this->message+="\r\n";
@@ -101,18 +94,12 @@ void Response::sendFile(const String& filePath,  const String& contentT){
 	}
 	this->statusCode=200;
 	char* readData= new char[2048]{0};
-	int i=0;
-	while(i<1024 && requestedFile.get(*(readData+(i++)))){}
-	this->body=readData;
+	requestedFile.readsome(readData, 2048);
+	this->body=((String&&)readData);
 	this->contentLength=this->body.length();
 	this->contentType=contentT;
-	if(readData){
-		delete[]readData;
-	}
+
 	requestedFile.close();
-	
-	generateMessage();
-	send(this->socketToClient, this->message, this->message.length() , 0);
 }
 
 String Response::getMessage(){
