@@ -164,7 +164,7 @@ int String::findIndexOf(char c)const{
     return -1;
 }
 String String::substr(int start, int end)const{
-    if(start<0 || end>=_length || start>=end){
+    if(start<0 || end>_length || start>=end){
         return String();
     }
     char* finalSubstring=new char[end-start+1]{0};

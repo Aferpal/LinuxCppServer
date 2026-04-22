@@ -1,5 +1,4 @@
 #include "Server.h"
-
 #define BUF_BASE_LEN 1024
 
 using namespace http;
@@ -125,30 +124,12 @@ void Server::handleRequest(const Request& request){
 
 }
 
-String content_type_from_extension(const String& ext){
-
-	if ( ext == ".js"){
-		return "text/javascript";
-	}else if( ext == ".json" ){
-		return "application/json";
-	}else if( ext == ".jpg" || ext == ".jpeg"){
-		return "image/jpeg";
-	}else if( ext == ".css"){
-		return "text/css";
-	}else{
-		return "text/plain";
-	}
-
-}
-
 void Server::addStaticFolder(const String& folder){
     for (const auto & entry : std::filesystem::directory_iterator((const char*)folder)){
 		if(entry.is_regular_file()){
 			String file = entry.path().relative_path().c_str();
-			String extension = (entry.path().extension().c_str());
-			String content_type = content_type_from_extension(extension);
-			this->get(String("/")+file, [file, content_type](const Request& req, Response& res){
-        		res.sendFile(file, content_type);
+			this->get(String("/")+file, [file](const Request& req, Response& res){
+        		res.sendFile(file);
     		});
 		}
 	}
